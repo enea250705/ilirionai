@@ -19,13 +19,28 @@ import {
 } from './schema';
 import { ArtifactKind } from '@/components/artifact';
 
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
+// Create a dummy db client when POSTGRES_URL is not available
+let client;
+let db;
 
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+try {
+  if (process.env.POSTGRES_URL) {
+    client = postgres(process.env.POSTGRES_URL);
+    db = drizzle(client);
+  } else {
+    console.warn('POSTGRES_URL not defined, database functionality will be limited');
+    // Create a mock db implementation that doesn't fail
+    db = new Proxy({}, {
+      get: () => async () => [] // Return empty arrays for all queries
+    });
+  }
+} catch (error) {
+  console.error('Failed to initialize database connection', error);
+  // Create a mock db implementation that doesn't fail
+  db = new Proxy({}, {
+    get: () => async () => [] // Return empty arrays for all queries
+  });
+}
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {

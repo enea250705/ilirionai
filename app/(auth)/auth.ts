@@ -10,6 +10,13 @@ interface ExtendedSession extends Session {
   user: User;
 }
 
+// Fallback demo user when no database is available
+const DEMO_USER = {
+  id: 'demo-user-123',
+  name: 'Demo User',
+  email: 'demo@ilirion.ai'
+};
+
 export const {
   handlers: { GET, POST },
   auth,
@@ -21,12 +28,28 @@ export const {
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
-        const users = await getUser(email);
-        if (users.length === 0) return null;
-        // biome-ignore lint: Forbidden non-null assertion.
-        const passwordsMatch = await compare(password, users[0].password!);
-        if (!passwordsMatch) return null;
-        return users[0] as any;
+        try {
+          // Check if we're in a development environment with no database
+          if (!process.env.POSTGRES_URL && (email === 'demo@ilirion.ai' || !email)) {
+            console.warn('Using demo user since database is not configured');
+            return DEMO_USER as any;
+          }
+          
+          const users = await getUser(email);
+          if (users.length === 0) return null;
+          // biome-ignore lint: Forbidden non-null assertion.
+          const passwordsMatch = await compare(password, users[0].password!);
+          if (!passwordsMatch) return null;
+          return users[0] as any;
+        } catch (error) {
+          console.error('Error during authorization:', error);
+          // If we can't access the database, allow a demo user
+          if (!process.env.POSTGRES_URL) {
+            console.warn('Falling back to demo user due to database error');
+            return DEMO_USER as any;
+          }
+          return null;
+        }
       },
     }),
   ],

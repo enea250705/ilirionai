@@ -3,6 +3,7 @@ import 'server-only';
 import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { and, asc, desc, eq, gt, gte, inArray, lt, SQL } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import {
@@ -20,8 +21,8 @@ import {
 import { ArtifactKind } from '@/components/artifact';
 
 // Create a dummy db client when POSTGRES_URL is not available
-let client;
-let db;
+let client: ReturnType<typeof postgres> | undefined;
+let db: PostgresJsDatabase | any;
 
 try {
   if (process.env.POSTGRES_URL) {

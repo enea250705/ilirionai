@@ -49,6 +49,7 @@ export interface RegisterActionState {
     | 'failed'
     | 'user_exists'
     | 'invalid_data';
+  error?: string;
 }
 
 export const register = async (
@@ -61,24 +62,39 @@ export const register = async (
       password: formData.get('password'),
     });
 
-    const [user] = await getUser(validatedData.email);
-
-    if (user) {
-      return { status: 'user_exists' } as RegisterActionState;
+    try {
+      const [user] = await getUser(validatedData.email);
+      
+      if (user) {
+        return { status: 'user_exists' } as RegisterActionState;
+      }
+      
+      await createUser(validatedData.email, validatedData.password);
+      
+      await signIn('credentials', {
+        email: validatedData.email,
+        password: validatedData.password,
+        redirect: false,
+      });
+      
+      return { status: 'success' };
+    } catch (dbError) {
+      console.error('Database error during registration:', dbError);
+      return { 
+        status: 'failed', 
+        error: `Database error: ${dbError.message || 'Unknown database error'}` 
+      };
     }
-    await createUser(validatedData.email, validatedData.password);
-    await signIn('credentials', {
-      email: validatedData.email,
-      password: validatedData.password,
-      redirect: false,
-    });
-
-    return { status: 'success' };
   } catch (error) {
+    console.error('Registration error:', error);
+    
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };
     }
 
-    return { status: 'failed' };
+    return { 
+      status: 'failed',
+      error: `Registration failed: ${error.message || 'Unknown error'}`
+    };
   }
 };

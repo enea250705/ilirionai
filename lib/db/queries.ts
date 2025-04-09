@@ -20,9 +20,18 @@ import {
 } from './schema';
 import { ArtifactKind } from '@/components/artifact';
 
+// Interface for our database operations
+interface DatabaseOperations {
+  select(): any;
+  insert(): any;
+  update(): any;
+  delete(): any;
+}
+
 // Create a dummy db client when POSTGRES_URL is not available
 let client: ReturnType<typeof postgres> | undefined;
-let db: PostgresJsDatabase | any;
+// Explicitly type the db variable with a union type
+let db: PostgresJsDatabase;
 
 try {
   if (process.env.POSTGRES_URL) {
@@ -30,16 +39,42 @@ try {
     db = drizzle(client);
   } else {
     console.warn('POSTGRES_URL not defined, database functionality will be limited');
-    // Create a mock db implementation that doesn't fail
-    db = new Proxy({}, {
-      get: () => async () => [] // Return empty arrays for all queries
+    // Create a mock db implementation with properly typed proxy
+    db = new Proxy({} as PostgresJsDatabase, {
+      get: () => () => {
+        // Return a function that supports chaining
+        const chainableFunction = () => chainableFunction;
+        // Add methods that would exist on a selection
+        chainableFunction.from = () => chainableFunction;
+        chainableFunction.where = () => chainableFunction;
+        chainableFunction.orderBy = () => chainableFunction;
+        chainableFunction.limit = () => chainableFunction;
+        chainableFunction.values = () => Promise.resolve([]);
+        chainableFunction.set = () => chainableFunction;
+        // Make it awaitable
+        chainableFunction.then = (resolve: any) => Promise.resolve([]).then(resolve);
+        return chainableFunction;
+      }
     });
   }
 } catch (error) {
   console.error('Failed to initialize database connection', error);
-  // Create a mock db implementation that doesn't fail
-  db = new Proxy({}, {
-    get: () => async () => [] // Return empty arrays for all queries
+  // Create a mock db implementation with properly typed proxy
+  db = new Proxy({} as PostgresJsDatabase, {
+    get: () => () => {
+      // Return a function that supports chaining
+      const chainableFunction = () => chainableFunction;
+      // Add methods that would exist on a selection
+      chainableFunction.from = () => chainableFunction;
+      chainableFunction.where = () => chainableFunction;
+      chainableFunction.orderBy = () => chainableFunction;
+      chainableFunction.limit = () => chainableFunction;
+      chainableFunction.values = () => Promise.resolve([]);
+      chainableFunction.set = () => chainableFunction;
+      // Make it awaitable
+      chainableFunction.then = (resolve: any) => Promise.resolve([]).then(resolve);
+      return chainableFunction;
+    }
   });
 }
 

@@ -35,12 +35,25 @@ export const {
             return DEMO_USER as any;
           }
           
+          console.log(`Attempting to authorize user with email: ${email}`);
           const users = await getUser(email);
-          if (users.length === 0) return null;
-          // biome-ignore lint: Forbidden non-null assertion.
-          const passwordsMatch = await compare(password, users[0].password!);
-          if (!passwordsMatch) return null;
-          return users[0] as any;
+          console.log(`Found ${users.length} users with email: ${email}`);
+          
+          if (users.length === 0) {
+            console.log('No users found with this email');
+            return null;
+          }
+          
+          try {
+            // biome-ignore lint: Forbidden non-null assertion.
+            const passwordsMatch = await compare(password, users[0].password!);
+            console.log(`Password match result: ${passwordsMatch}`);
+            if (!passwordsMatch) return null;
+            return users[0] as any;
+          } catch (passwordError) {
+            console.error('Error comparing passwords:', passwordError);
+            return null;
+          }
         } catch (error) {
           console.error('Error during authorization:', error);
           // If we can't access the database, allow a demo user

@@ -154,13 +154,18 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
-        return 'Oops, an error occurred!';
+      onError: (error) => {
+        console.error('Error in chat stream:', error);
+        if (error.message && error.message.includes('API key')) {
+          return 'Error: Missing or invalid API key. Please add XAI_API_KEY and GROQ_API_KEY to your environment variables.';
+        }
+        return 'Oops, an error occurred! Please try again or check your API keys.';
       },
     });
   } catch (error) {
-    return new Response('An error occurred while processing your request!', {
-      status: 404,
+    console.error('Unhandled error in chat API:', error);
+    return new Response(`An error occurred: ${error.message || 'Unknown error'}`, {
+      status: 500,
     });
   }
 }

@@ -82,7 +82,9 @@ export const register = async (
       console.error('Database error during registration:', dbError);
       return { 
         status: 'failed', 
-        error: `Database error: ${dbError.message || 'Unknown database error'}` 
+        error: `Database error: ${dbError && typeof dbError === 'object' && 'message' in dbError 
+          ? dbError.message 
+          : 'Unknown database error'}` 
       };
     }
   } catch (error) {
@@ -94,7 +96,9 @@ export const register = async (
 
     return { 
       status: 'failed',
-      error: `Registration failed: ${error.message || 'Unknown error'}`
+      error: `Registration failed: ${error && typeof error === 'object' && 'message' in error 
+        ? error.message 
+        : 'Unknown error'}`
     };
   }
 };

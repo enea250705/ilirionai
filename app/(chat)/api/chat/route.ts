@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       },
       onError: (error) => {
         console.error('Error in chat stream:', error);
-        if (error.message && error.message.includes('API key')) {
+        if (error && typeof error === 'object' && 'message' in error && error.message.includes('API key')) {
           return 'Error: Missing or invalid API key. Please add XAI_API_KEY and GROQ_API_KEY to your environment variables.';
         }
         return 'Oops, an error occurred! Please try again or check your API keys.';
@@ -164,7 +164,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Unhandled error in chat API:', error);
-    return new Response(`An error occurred: ${error.message || 'Unknown error'}`, {
+    return new Response(`An error occurred: ${error && typeof error === 'object' && 'message' in error 
+      ? error.message 
+      : 'Unknown error'}`, {
       status: 500,
     });
   }
